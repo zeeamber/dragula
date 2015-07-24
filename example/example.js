@@ -15,6 +15,7 @@ dragula([$('left5'), $('right5')], {
     return handle.className === 'handle';
   }
 });
+dragula([$('left6'), $('right6')]);
 
 var single2 = $('single2');
 

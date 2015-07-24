@@ -24,6 +24,8 @@ function dragula (initialContainers, options) {
   var _currentSibling; // reference sibling now
   var _copy; // item used for copying
   var _renderTimer; // timer for setTimeout renderMirrorImage
+  var _intTopHandler; // timer for setInterval scrollUp
+  var _intBottomHandler; //timer for setInterval scrollDown
 
   var o = options || {};
   if (o.moves === void 0) { o.moves = always; }
@@ -178,7 +180,7 @@ function dragula (initialContainers, options) {
     if (!api.dragging) {
       return;
     }
-
+    clearInetervals();
     var item = _copy || _item;
     var clientX = getCoord('clientX', e);
     var clientY = getCoord('clientY', e);
@@ -327,7 +329,56 @@ function dragula (initialContainers, options) {
       dropTarget.insertBefore(item, reference);
       api.emit('shadow', item, dropTarget);
     }
+    
+    //container scroll
+    var container = item.parentElement;
+    var height = container.clientHeight;
+    var containerOffset = container.getBoundingClientRect();
+    var timer = 100;
+    var step = 10;
+    var isMoving=false;
+    var sum = height + containerOffset.top;
+    if(_clientY >= sum - item.clientHeight) {
+        isMoving = true;
+        clearInetervals();            
+        _intTopHandler= setInterval(function(){
+            item.parentElement.scrollTop = item.parentElement.scrollTop + step;
+        },timer);
+    }
+    if(_clientY<containerOffset.top+item.clientHeight) {
+        isMoving = true;
+        clearInetervals();            
+        _intBottomHandler= setInterval(function(){
+            item.parentElement.scrollTop = item.parentElement.scrollTop - step;
+        },timer);
+    }
+      
+    //page scroll
+    var topThreshold = item.clientHeight;
+    var bottomThreshold = window.innerHeight - item.clientHeight;
+    if(_clientY>bottomThreshold) {
+        isMoving = true;
+        clearInetervals();            
+        _intTopHandler= setInterval(function(){
+            document.body.scrollTop += step;
+        },timer/2);
+    }
+    if(_clientY<topThreshold) {
+        isMoving = true;
+        clearInetervals();            
+        _intTopHandler= setInterval(function(){
+            document.body.scrollTop -= step;
+        },timer/2);
+    }
+    if(!isMoving) {
+        clearInetervals();
+    }
   }
+    
+  function clearInetervals() {
+    clearInterval(_intTopHandler);
+    clearInterval(_intBottomHandler);    
+    }
 
   function renderMirrorImage () {
     if (_mirror) {
