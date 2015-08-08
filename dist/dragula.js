@@ -24,8 +24,11 @@ function dragula (initialContainers, options) {
   var _currentSibling; // reference sibling now
   var _copy; // item used for copying
   var _renderTimer; // timer for setTimeout renderMirrorImage
-  var _intTopHandler; // timer for setInterval scrollUp
-  var _intBottomHandler; //timer for setInterval scrollDown
+  var _scrollTimer; // timer for serInterval scroll
+  var _scrollCon; // scroll container 
+  var _scrollWin; // scroll window
+  var _bound; // bounding box of container
+  var _targetSwitch; // switch between source and target container
 
   var o = options || {};
   if (o.moves === void 0) { o.moves = always; }
@@ -39,6 +42,7 @@ function dragula (initialContainers, options) {
   if (o.direction === void 0) { o.direction = 'vertical'; }
   if (o.delay === void 0) { o.delay = false; }
   if (o.delay === true) { o.delay = 300; }
+  if (o.scrolling === void 0) { o.scrolling = false; }
 
   var api = emitter({
     containers: o.containers,
@@ -100,6 +104,11 @@ function dragula (initialContainers, options) {
     _offsetY = getCoord('pageY', e) - offset.top;
     _clientX = getCoord('clientX', e);
     _clientY = getCoord('clientY', e);
+      
+    _scrollCon = {};
+    _scrollWin = {};
+    _bound = getOffset(_source);
+    _targetSwitch = 0;
 
     if (typeof o.delay === 'number') {
       _renderTimer = setTimeout(renderMirrorAndDrag, o.delay);
@@ -180,7 +189,9 @@ function dragula (initialContainers, options) {
     if (!api.dragging) {
       return;
     }
-    clearInetervals();
+    _scrollCon = {};
+    _scrollWin = {};
+    stopScroll();
     var item = _copy || _item;
     var clientX = getCoord('clientX', e);
     var clientY = getCoord('clientY', e);
@@ -305,6 +316,8 @@ function dragula (initialContainers, options) {
     var item = _copy || _item;
     var elementBehindCursor = getElementBehindPoint(_mirror, _clientX, _clientY);
     var dropTarget = findDropTarget(elementBehindCursor, _clientX, _clientY);
+    var targetContainer = dropTarget;
+      
     if (dropTarget === _source && o.copy) {
       if (item.parentElement) {
         item.parentElement.removeChild(item);
@@ -329,56 +342,67 @@ function dragula (initialContainers, options) {
       dropTarget.insertBefore(item, reference);
       api.emit('shadow', item, dropTarget);
     }
-    
-    //container scroll
-    var container = item.parentElement;
-    var height = container.clientHeight;
-    var containerOffset = container.getBoundingClientRect();
-    var timer = 100;
-    var step = 10;
-    var isMoving=false;
-    var sum = height + containerOffset.top;
-    if(_clientY >= sum - item.clientHeight) {
-        isMoving = true;
-        clearInetervals();            
-        _intTopHandler= setInterval(function(){
-            item.parentElement.scrollTop = item.parentElement.scrollTop + step;
-        },timer);
+
+    // scroll while dragging
+    var offset = getOffset(_mirror);
+    if(targetContainer !== _source && _targetSwitch !== 1) {
+        clearTimeout(_scrollTimer);
+        _targetSwitch = 1;
+        _bound = getOffset(targetContainer);
     }
-    if(_clientY<containerOffset.top+item.clientHeight) {
-        isMoving = true;
-        clearInetervals();            
-        _intBottomHandler= setInterval(function(){
-            item.parentElement.scrollTop = item.parentElement.scrollTop - step;
-        },timer);
+    else if(targetContainer === _source && _targetSwitch === 1) {
+        clearTimeout(_scrollTimer);
+        _targetSwitch = 0;
+        _bound =getOffset(_source);
     }
+    _scrollCon.right = offset.left - _bound.left - targetContainer.clientWidth + _mirror.clientWidth;
+    _scrollCon.left = _bound.left - offset.left;
+    _scrollCon.up = _bound.top - offset.top;
+    _scrollCon.down = offset.top - _bound.top - targetContainer.clientHeight + _mirror.clientHeight;
       
-    //page scroll
-    var topThreshold = item.clientHeight;
-    var bottomThreshold = window.innerHeight - item.clientHeight;
-    if(_clientY>bottomThreshold) {
-        isMoving = true;
-        clearInetervals();            
-        _intTopHandler= setInterval(function(){
-            document.body.scrollTop += step;
-        },timer/2);
+    updateWinScroll();
+
+    if ((_scrollCon.right > 0 || _scrollCon.left > 0|| _scrollCon.up > 0 || _scrollCon.down > 0 || _scrollWin.right > 0 || _scrollWin.left > 0 ||  _scrollWin.up > 0 || _scrollWin.down > 0) && ! o.scrolling) {
+        scroll();
+        o.scrolling = true;
     }
-    if(_clientY<topThreshold) {
-        isMoving = true;
-        clearInetervals();            
-        _intTopHandler= setInterval(function(){
-            document.body.scrollTop -= step;
-        },timer/2);
-    }
-    if(!isMoving) {
-        clearInetervals();
+    else {
+        stopScroll();
     }
   }
     
-  function clearInetervals() {
-    clearInterval(_intTopHandler);
-    clearInterval(_intBottomHandler);    
-    }
+  function updateWinScroll() {
+    _scrollWin.right = _clientX - window.innerWidth + _item.clientWidth/2;
+    _scrollWin.left = _item.clientWidth - _clientX;
+    _scrollWin.up = _item.clientHeight - _clientY;
+    _scrollWin.down = _clientY - window.innerHeight + _item.clientHeight/2;
+  }
+    
+  function stopScroll() {
+      o.scrolling = false;
+      clearTimeout(_scrollTimer);
+  }
+    
+  function scroll() {
+      updateWinScroll();
+      var dropTarget = _item.parentElement;
+      var renderMode = navigator.userAgent.toLowerCase().indexOf('firefox') !== -1 ? documentElement : body ;
+      if (_scrollCon.right > 0) { dropTarget.scrollLeft += (_scrollCon.right >> 1); } //dividing by 2 to soften effect
+      if (_scrollCon.left > 0) { dropTarget.scrollLeft -= (_scrollCon.left >> 1); }
+      if (_scrollCon.down > 0) { dropTarget.scrollTop += (_scrollCon.down >> 1); }
+      if (_scrollCon.up > 0) { dropTarget.scrollTop -= (_scrollCon.up >> 1); }
+      if (_scrollWin.right > 0) { renderMode.scrollTop += (_scrollWin.right); }
+      if (_scrollWin.left > 0) { renderMode.scrollTop -= (_scrollWin.left); }
+      if (_scrollWin.down > 0) { renderMode.scrollTop += (_scrollWin.down); }
+      if (_scrollWin.up > 0) { renderMode.scrollTop -= (_scrollWin.up); }
+
+      if (_scrollCon.right > 0 || _scrollCon.left > 0 || _scrollCon.up > 0 || _scrollCon.down > 0 || _scrollWin.right > 0 || _scrollWin.left > 0 || _scrollWin.up > 0 || _scrollWin.down > 0) {
+        _scrollTimer=setTimeout(scroll, 100);
+      }
+      else {
+          stopScroll();
+      }
+  }
 
   function renderMirrorImage () {
     if (_mirror) {
