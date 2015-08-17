@@ -372,10 +372,12 @@ function dragula (initialContainers, options) {
   }
     
   function updateWinScroll() {
-    _scrollWin.right = _clientX - window.innerWidth + _item.clientWidth/2;
-    _scrollWin.left = _item.clientWidth - _clientX;
-    _scrollWin.up = _item.clientHeight - _clientY;
-    _scrollWin.down = _clientY - window.innerHeight + _item.clientHeight/2;
+    var offset = getOffset(_mirror);
+    var renderMode = navigator.userAgent.toLowerCase().indexOf('firefox') !== -1 ? documentElement : body ;
+    _scrollWin.right = offset.left - renderMode.scrollLeft - window.innerWidth + _mirror.clientHeight;
+    _scrollWin.left = renderMode.scrollLeft - offset.left;
+    _scrollWin.up =renderMode.scrollTop - offset.top;
+    _scrollWin.down = offset.top - renderMode.scrollTop - window.innerHeight + _mirror.clientHeight;
   }
     
   function stopScroll() {
