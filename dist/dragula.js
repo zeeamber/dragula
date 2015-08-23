@@ -373,11 +373,11 @@ function dragula (initialContainers, options) {
     
   function updateWinScroll() {
     var offset = getOffset(_mirror);
-    var renderMode = navigator.userAgent.toLowerCase().indexOf('firefox') !== -1 ? documentElement : body ;
-    _scrollWin.right = offset.left - renderMode.scrollLeft - window.innerWidth + _mirror.clientHeight;
-    _scrollWin.left = renderMode.scrollLeft - offset.left;
-    _scrollWin.up =renderMode.scrollTop - offset.top;
-    _scrollWin.down = offset.top - renderMode.scrollTop - window.innerHeight + _mirror.clientHeight;
+    var winScroll = documentElement.scrollTop > body.scrollTop ? documentElement : body ;
+    _scrollWin.right = offset.left - winScroll.scrollLeft - window.innerWidth + _mirror.clientHeight;
+    _scrollWin.left = winScroll.scrollLeft - offset.left;
+    _scrollWin.up =winScroll.scrollTop - offset.top;
+    _scrollWin.down = offset.top - winScroll.scrollTop - window.innerHeight + _mirror.clientHeight;
   }
     
   function stopScroll() {
@@ -388,15 +388,15 @@ function dragula (initialContainers, options) {
   function scroll() {
       updateWinScroll();
       var dropTarget = _item.parentElement;
-      var renderMode = navigator.userAgent.toLowerCase().indexOf('firefox') !== -1 ? documentElement : body ;
+      var winScroll = documentElement.scrollTop > body.scrollTop ? documentElement : body ;
       if (_scrollCon.right > 0) { dropTarget.scrollLeft += (_scrollCon.right >> 1); } //dividing by 2 to soften effect
       if (_scrollCon.left > 0) { dropTarget.scrollLeft -= (_scrollCon.left >> 1); }
       if (_scrollCon.down > 0) { dropTarget.scrollTop += (_scrollCon.down >> 1); }
       if (_scrollCon.up > 0) { dropTarget.scrollTop -= (_scrollCon.up >> 1); }
-      if (_scrollWin.right > 0) { renderMode.scrollTop += (_scrollWin.right); }
-      if (_scrollWin.left > 0) { renderMode.scrollTop -= (_scrollWin.left); }
-      if (_scrollWin.down > 0) { renderMode.scrollTop += (_scrollWin.down); }
-      if (_scrollWin.up > 0) { renderMode.scrollTop -= (_scrollWin.up); }
+      if (_scrollWin.right > 0) { winScroll.scrollLeft += (_scrollWin.right); }
+      if (_scrollWin.left > 0) { winScroll.scrollLeft -= (_scrollWin.left); }
+      if (_scrollWin.down > 0) { winScroll.scrollTop += (_scrollWin.down); }
+      if (_scrollWin.up > 0) { winScroll.scrollTop -= (_scrollWin.up); }
 
       if (_scrollCon.right > 0 || _scrollCon.left > 0 || _scrollCon.up > 0 || _scrollCon.down > 0 || _scrollWin.right > 0 || _scrollWin.left > 0 || _scrollWin.up > 0 || _scrollWin.down > 0) {
         _scrollTimer=setTimeout(scroll, 100);
