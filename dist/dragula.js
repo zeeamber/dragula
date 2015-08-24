@@ -157,8 +157,6 @@ function dragula (initialContainers, options) {
     var offset = getOffset(_item);
     _offsetX = getCoord('pageX', e) - offset.left;
     _offsetY = getCoord('pageY', e) - offset.top;
-    _clientX = getCoord('clientX', e);
-    _clientY = getCoord('clientY', e);
       
     _scrollCon = {};
     _scrollWin = {};
@@ -379,12 +377,10 @@ function dragula (initialContainers, options) {
     _mirror.style.top  = y + 'px';
 
     var item = _copy || _item;
-    var elementBehindCursor = getElementBehindPoint(_mirror, _clientX, _clientY);
-    var dropTarget = findDropTarget(elementBehindCursor, _clientX, _clientY);
-    var targetContainer = dropTarget;
 
     var elementBehindCursor = getElementBehindPoint(_mirror, clientX, clientY);
     var dropTarget = findDropTarget(elementBehindCursor, clientX, clientY);
+    var targetContainer = dropTarget;
     var changed = dropTarget !== null && dropTarget !== _lastDropTarget;
     if (changed || dropTarget === null) {
       out();
@@ -421,6 +417,10 @@ function dragula (initialContainers, options) {
       dropTarget.insertBefore(item, reference);
       drake.emit('shadow', item, dropTarget);
     }
+      
+    function moved (type) { drake.emit(type, item, _lastDropTarget, _source); }
+    function over () { if (changed) { moved('over'); } }
+    function out () { if (_lastDropTarget) { moved('out'); } }
 
     // scroll while dragging
     var offset = getOffset(_mirror);
@@ -483,10 +483,6 @@ function dragula (initialContainers, options) {
       else {
           stopScroll();
       }
-
-    function moved (type) { drake.emit(type, item, _lastDropTarget, _source); }
-    function over () { if (changed) { moved('over'); } }
-    function out () { if (_lastDropTarget) { moved('out'); } }
   }
 
   function spillOver (el) {

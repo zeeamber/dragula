@@ -26,6 +26,7 @@ dragula([$('left5'), $('right5')], {
 });
 
 dragula([$('left6'), $('right6')], { removeOnSpill: true });
+dragula([$('left7'), $('right7')]);
 
 var single1 = $('single1');
 
