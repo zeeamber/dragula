@@ -1,14 +1,22 @@
 'use strict';
 
+var crossvent = require('crossvent');
+
 dragula([$('left1'), $('right1')]);
 dragula([$('left2'), $('right2')], { copy: true });
-dragula([$('left3'), $('right3')]).on('drag', function (el) {
-  el.className = el.className.replace(' ex-moved', '');
-}).on('drop', function (el) {
-  setTimeout(function () {
+dragula([$('left3'), $('right3')])
+  .on('drag', function (el) {
+    el.className = el.className.replace('ex-moved', '');
+  })
+  .on('drop', function (el) {
     el.className += ' ex-moved';
-  }, 0);
-});
+  })
+  .on('over', function (el, container) {
+    container.className += ' ex-over';
+  })
+  .on('out', function (el, container) {
+    container.className = container.className.replace('ex-over', '');
+  });
 dragula([$('left4'), $('right4')], { revertOnSpill: true });
 dragula([$('left5'), $('right5')], {
   moves: function (el, container, handle) {
@@ -17,28 +25,23 @@ dragula([$('left5'), $('right5')], {
 });
 dragula([$('left6'), $('right6')]);
 
-var single2 = $('single2');
+dragula([$('left6'), $('right6')], { removeOnSpill: true });
 
-dragula([$('single1')], { removeOnSpill: true });
-dragula({ containers: [single2], delay: 200 });
+var single1 = $('single1');
 
-if (single2.addEventListener) {
-  single2.addEventListener('click', clickHandler, false);
-} else {
-  single2.attachEvent('onclick', clickHandler);
-}
+dragula([single1]);
+
+crossvent.add(single1, 'click', clickHandler);
 
 function clickHandler (e) {
-  if (e.target === this) {
+  var target = e.target;
+  if (target === single1) {
     return;
   }
-  var target = e.target || e.srcElement;
-  var text = ('innerText' in target)? 'innerText' : 'textContent';
-  
-  target[text] += ' [click!]';
+  target.innerHTML += ' [click!]';
 
   setTimeout(function () {
-    target[text] = target[text].replace(/ \[click!\]/g, '');
+    target.innerHTML = target.innerHTML.replace(/ \[click!\]/g, '');
   }, 500);
 }
 
