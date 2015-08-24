@@ -64,6 +64,7 @@ function dragula (initialContainers, options) {
   var _scrollWin; // scroll window
   var _bound; // bounding box of container
   var _targetSwitch; // switch between source and target container
+  var _lastDropTarget = null; // last container item was over
   var _grabbed; // holds mousedown context until first mousemove
 
   var o = options || {};
@@ -157,8 +158,6 @@ function dragula (initialContainers, options) {
     var offset = getOffset(_item);
     _offsetX = getCoord('pageX', e) - offset.left;
     _offsetY = getCoord('pageY', e) - offset.top;
-    _clientX = getCoord('clientX', e);
-    _clientY = getCoord('clientY', e);
       
     _scrollCon = {};
     _scrollWin = {};
@@ -254,7 +253,7 @@ function dragula (initialContainers, options) {
     _scrollCon = {};
     _scrollWin = {};
     stopScroll();
-      
+
     var item = _copy || _item;
     var clientX = getCoord('clientX', e);
     var clientY = getCoord('clientY', e);
@@ -381,13 +380,13 @@ function dragula (initialContainers, options) {
     var item = _copy || _item;
     var elementBehindCursor = getElementBehindPoint(_mirror, clientX, clientY);
     var dropTarget = findDropTarget(elementBehindCursor, clientX, clientY);
+    var targetContainer = dropTarget;
     var changed = dropTarget !== null && dropTarget !== _lastDropTarget;
     if (changed || dropTarget === null) {
       out();
       _lastDropTarget = dropTarget;
       over();
     }
-    var targetContainer = dropTarget;
     if (dropTarget === _source && o.copy) {
       if (item.parentElement) {
         item.parentElement.removeChild(item);
